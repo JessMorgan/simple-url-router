@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Key Not Found{% endblock %}
+{% block content %}
+<h1>Key Not Found</h1>
+<p>The key <code>{{ key }}</code> does not exist in the redirect table.</p>
+
+{% if authenticated %}
+<div class="flash">
+    <p>You are logged in as an administrator. Would you like to create a redirect for this key?</p>
+    <a class="btn btn-primary" href="/admin/{{ key }}">Create Redirect for <code>{{ key }}</code></a>
+</div>
+{% else %}
+<p class="meta">
+    <a href="/login">Login</a> as an administrator to create a new redirect for this key.
+</p>
+{% endif %}
+{% endblock %}
