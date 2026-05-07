@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+*.md
+LICENSE
+.env
+data/
+*.db*
+tests/
+.pytest_cache/
