@@ -24,6 +24,48 @@ docker compose up -d
 
 Keys can be integers, UUIDs/GUIDs, or arbitrary alphanumeric strings (with hyphens and underscores). Redirect values must be absolute paths (starting with `/`) — not full URLs.
 
+## Admin features
+
+All admin endpoints require authentication via the built-in login form (`/login`).
+
+### Manage redirects (`/admin`)
+
+The admin listing page shows all keys and their paths in a table. Each row has **Edit** and **Delete** buttons:
+
+- **Edit** — opens the edit form to change the redirect path.
+- **Delete** — deletes the key immediately (with a confirmation prompt).
+
+There's also a **Create New Redirect** button to add a key manually.
+
+### Single-key creation on 404
+
+When you visit a key that doesn't exist and you're logged in, the 404 page shows a form to create a redirect for that key on the spot — no need to navigate to the admin panel first.
+
+### Bulk import (`/admin/import`)
+
+Paste CSV data into the textarea to import many redirects at once:
+
+```csv
+key,path
+42,/devices/powerspec_g757
+nas,/devices/gtk_nas
+switch,/network/10g_switch
+```
+
+- The first row is treated as a header and skipped if it starts with `key`.
+- Each row must have `key,path` — keys and paths are validated with the same rules as the single-edit form.
+- Existing keys are **updated** (upsert).
+- Invalid rows are **skipped** and reported inline — valid rows are still imported.
+- The page shows a count of successfully imported entries plus any per-row errors.
+
+Example:
+
+```bash
+curl -X POST http://localhost:8000/admin/import \
+  -b "session=<session-cookie>" \
+  -d "csv=key,path%0A42,/devices/powerspec_g757"
+```
+
 ## Configuration
 
 All config is via environment variables. Create a `.env` file:
