@@ -61,6 +61,22 @@ async def delete_key(key: str) -> bool:
         return cursor.rowcount > 0
 
 
+async def bulk_import(entries: list[tuple[str, str]]) -> int:
+    """Insert multiple (key, path) pairs. Existing keys are updated.
+    Returns the number of successfully inserted/updated entries."""
+    async with aiosqlite.connect(settings.db_path) as db:
+        await db.executemany(
+            """INSERT INTO redirects (key, path, updated_at)
+               VALUES (?, ?, CURRENT_TIMESTAMP)
+               ON CONFLICT(key) DO UPDATE SET
+                   path = excluded.path,
+                   updated_at = CURRENT_TIMESTAMP""",
+            entries,
+        )
+        await db.commit()
+        return len(entries)
+
+
 async def list_all() -> list[dict[str, str]]:
     async with aiosqlite.connect(settings.db_path) as db:
         db.row_factory = aiosqlite.Row

@@ -19,8 +19,11 @@
             <td><code>{{ r.key }}</code></td>
             <td><code>{{ r.path }}</code></td>
             <td class="meta">{{ r.updated_at[:10] if r.updated_at else "" }}</td>
-            <td>
+            <td style="white-space:nowrap;">
                 <a href="/admin/{{ r.key }}" class="btn btn-secondary" style="font-size:0.8rem; padding:0.25rem 0.5rem;">Edit</a>
+                <form method="POST" action="/admin/{{ r.key }}/delete" onsubmit="return confirm('Delete redirect for key \'{{ r.key }}\'?');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger" style="font-size:0.8rem; padding:0.25rem 0.5rem;">Delete</button>
+                </form>
             </td>
         </tr>
     {% endfor %}
@@ -32,5 +35,6 @@
 
 <p style="margin-top: 1rem;">
     <a href="/admin/new" class="btn btn-primary">Create New Redirect</a>
+    <a href="/admin/import" class="btn btn-secondary">Bulk Import CSV</a>
 </p>
 {% endblock %}

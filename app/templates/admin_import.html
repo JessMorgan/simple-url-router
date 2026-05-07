@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Bulk Import Redirects{% endblock %}
+{% block content %}
+<h1>Bulk Import Redirects</h1>
+
+{% if result is not none %}
+<div class="flash {% if result.errors %}error{% endif %}">
+    <strong>{{ result.created }} redirect(s) imported successfully.</strong>
+    {% if result.errors %}
+    <ul style="margin:0.5rem 0 0; padding-left:1.25rem;">
+    {% for err in result.errors %}
+        <li>{{ err }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endif %}
+
+<p class="meta">Paste CSV data below. Each line should be <code>key,path</code>. The first line is treated as a header and skipped if it contains <code>key</code>. Existing keys are updated.</p>
+
+<form method="POST" action="/admin/import" enctype="multipart/form-data">
+    <label for="csv">CSV Data</label>
+    <textarea id="csv" name="csv" rows="12" style="width:100%; font-family:monospace; font-size:0.85rem; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px;" placeholder="key,path&#10;42,/devices/powerspec_g757&#10;nas,/devices/gtk_nas">{% if raw_csv %}{{ raw_csv }}{% endif %}</textarea>
+
+    <p style="margin-top: 1rem;">
+        <button type="submit" class="btn btn-primary">Import CSV</button>
+        <a href="/admin" class="btn btn-secondary">Back to Admin</a>
+    </p>
+</form>
+{% endblock %}

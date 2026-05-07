@@ -1,3 +1,6 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
@@ -7,7 +10,7 @@ from app.auth import (
     verify_password,
     verify_session_token,
 )
-from app.database import delete_key, list_all, lookup_key, upsert_key
+from app.database import bulk_import, delete_key, list_all, lookup_key, upsert_key
 from app.models import KeyParam, PathValue
 from app.templates import templates
 from app.config import settings
@@ -60,6 +63,57 @@ async def logout(response: Response):
     response = RedirectResponse(url="/login", status_code=302)
     response.set_cookie(key="session", value="", max_age=0)
     return response
+
+
+@router.get("/admin/import", response_class=HTMLResponse)
+async def admin_import_page(request: Request):
+    require_admin(request)
+    context = {
+        "base_url": settings.base_url,
+        "result": None,
+        "raw_csv": "",
+    }
+    return templates.TemplateResponse(request, "admin_import.html", context)
+
+
+@router.post("/admin/import")
+async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
+    require_admin(request)
+    reader = csv.reader(io.StringIO(csv_data))
+    rows = list(reader)
+
+    start = 1 if rows and rows[0] and rows[0][0].strip().lower() == "key" else 0
+    data_rows = rows[start:]
+
+    results: dict = {"created": 0, "errors": []}
+    entries: list[tuple[str, str]] = []
+
+    for i, row in enumerate(data_rows, start=start + 1):
+        if not row or not row[0].strip():
+            continue
+        if len(row) < 2 or not row[1].strip():
+            results["errors"].append(f"Row {i}: missing path")
+            continue
+        key = row[0].strip()
+        path = row[1].strip()
+        try:
+            _ = TypeAdapter(KeyParam).validate_python(key)
+            _ = TypeAdapter(PathValue).validate_python(path)
+        except ValidationError as e:
+            results["errors"].append(f"Row {i}: {e.errors()[0]['msg']}")
+            continue
+        entries.append((key, path))
+
+    if entries:
+        count = await bulk_import(entries)
+        results["created"] = count
+
+    context = {
+        "base_url": settings.base_url,
+        "result": results,
+        "raw_csv": csv_data,
+    }
+    return templates.TemplateResponse(request, "admin_import.html", context)
 
 
 @router.get("/admin/{key}", response_class=HTMLResponse)
