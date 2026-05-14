@@ -17,6 +17,7 @@ from app.config import settings
 from pydantic import TypeAdapter
 
 _path_adapter = TypeAdapter(PathValue)
+RESERVED_KEYS = frozenset({"health", "admin", "login", "logout"})
 
 router = APIRouter()
 
@@ -96,6 +97,9 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
             continue
         key = row[0].strip()
         path = row[1].strip()
+        if key in RESERVED_KEYS:
+            results["errors"].append(f"Row {i}: Key '{key}' is reserved")
+            continue
         try:
             _ = TypeAdapter(KeyParam).validate_python(key)
             _ = TypeAdapter(PathValue).validate_python(path)
@@ -136,6 +140,8 @@ async def admin_upsert(
     path: str = Form(...),
 ):
     require_admin(request)
+    if key in RESERVED_KEYS:
+        raise HTTPException(status_code=422, detail=f"Key '{key}' is reserved")
     try:
         validated_path = _path_adapter.validate_python(path)
     except ValidationError as e:
