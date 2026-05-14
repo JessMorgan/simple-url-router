@@ -38,6 +38,15 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     )
 
 
+@templates.context_processor
+async def inject_auth(request: Request):
+    from app.auth import verify_session_token
+
+    token = request.cookies.get("session")
+    is_authenticated = bool(token and verify_session_token(token))
+    return {"is_authenticated": is_authenticated}
+
+
 # Health check must be registered BEFORE the catch-all /{key} redirect route.
 @app.get("/health")
 async def health():
