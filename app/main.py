@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.auth import hash_password
