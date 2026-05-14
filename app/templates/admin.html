@@ -4,12 +4,19 @@
 <h1>{% if is_new %}Create{% else %}Edit{% endif %} Redirect</h1>
 
 {% if is_new %}
-<p class="meta">Creating a new redirect for key <code>{{ key }}</code>.</p>
+<p class="meta">Creating a new redirect.</p>
 {% else %}
 <p class="meta">Editing redirect for key <code>{{ key }}</code>. Current path: <code>{{ existing_path }}</code></p>
 {% endif %}
 
-<form method="POST" action="/admin/{{ key }}">
+<form method="POST" action="{% if is_new %}/admin/{% else %}/admin/{{ key }}{% endif %}">
+    {% if is_new %}
+    <label for="key">Redirect Key</label>
+    <input type="text" id="key" name="key" value="" required
+           placeholder="my-redirect-key">
+    <p class="meta">The URL path segment that triggers this redirect (e.g. <code>my-link</code> for <code>{{ base_url }}/my-link</code>).</p>
+    {% endif %}
+
     <label for="path">Redirect Path</label>
     <input type="text" id="path" name="path" value="{{ existing_path }}" required
            placeholder="/path/to/destination">

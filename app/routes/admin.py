@@ -145,6 +145,26 @@ async def admin_upsert(
     return RedirectResponse(url=f"/{key}", status_code=302)
 
 
+@router.post("/admin/")
+async def admin_create(
+    request: Request,
+    key: str = Form(...),
+    path: str = Form(...),
+):
+    require_admin(request)
+    try:
+        validated_key = TypeAdapter(KeyParam).validate_python(key)
+        validated_path = _path_adapter.validate_python(path)
+    except ValidationError as e:
+        clean = [
+            {"loc": err.get("loc"), "msg": err.get("msg"), "type": err.get("type")}
+            for err in e.errors()
+        ]
+        raise HTTPException(status_code=422, detail=clean)
+    await upsert_key(validated_key, validated_path)
+    return RedirectResponse(url=f"/{validated_key}", status_code=302)
+
+
 @router.post("/admin/{key}/delete")
 async def admin_delete(request: Request, key: KeyParam):
     require_admin(request)
