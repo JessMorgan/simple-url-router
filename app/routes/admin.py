@@ -18,6 +18,11 @@ from pydantic import TypeAdapter
 
 _path_adapter = TypeAdapter(PathValue)
 
+# Route keys that shadow built-in FastAPI route handlers (/health, /admin,
+# /login, /logout) must be blocked at creation time so they never conflict
+# with the catch-all /{key} redirect at the end of main.py.
+RESERVED_KEYS: frozenset = frozenset({"health", "admin", "login", "logout"})
+
 router = APIRouter()
 
 
@@ -102,6 +107,9 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
         except ValidationError as e:
             results["errors"].append(f"Row {i}: {e.errors()[0]['msg']}")
             continue
+        if key in RESERVED_KEYS:
+            results["errors"].append(f"Row {i}: key '{key}' is reserved")
+            continue
         entries.append((key, path))
 
     if entries:
@@ -141,6 +149,8 @@ async def admin_upsert(
     except ValidationError as e:
         clean = [{"loc": err.get("loc"), "msg": err.get("msg"), "type": err.get("type")} for err in e.errors()]
         raise HTTPException(status_code=422, detail=clean)
+    if key in RESERVED_KEYS:
+        raise HTTPException(status_code=422, detail=f"Key '{key}' is reserved")
     await upsert_key(key, validated_path)
     return RedirectResponse(url=f"/{key}", status_code=302)
 
