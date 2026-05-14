@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from app.auth import hash_password
+from app.auth import hash_password, verify_session_token
 from app.config import settings
 from app.database import init_db, list_all
 from app.routes import admin, redirect
@@ -23,6 +23,16 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+async def auth_context(request: Request) -> dict:
+    """Inject is_authenticated into all template contexts."""
+    token = request.cookies.get("session")
+    authenticated = bool(token and verify_session_token(token))
+    return {"is_authenticated": authenticated}
+
+
+templates.context_processors.append(auth_context)
 
 
 @app.exception_handler(HTTPException)
