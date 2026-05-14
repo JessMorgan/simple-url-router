@@ -30,7 +30,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:
         context = {"base_url": settings.base_url}
         return templates.TemplateResponse(
-            request, "login.html", context, status_code=401
+            request, "login.html", context, status_code=200
         )
     return JSONResponse(
         status_code=exc.status_code,
