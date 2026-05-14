@@ -1,11 +1,11 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from app.auth import hash_password
 from app.config import settings
-from app.database import init_db, list_all
+from app.database import init_db, list_all, lookup_key
 from app.routes import admin, redirect
 from app.templates import templates
 
@@ -36,6 +36,22 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={"detail": exc.detail},
     )
+
+
+# Middleware: check if the path is a redirect key before any route handler.
+# This ensures keys like "health", "admin", "login" resolve even though
+# explicit routes shadow the /{key} catch-all.
+@app.middleware("http")
+async def check_redirect_middleware(request: Request, call_next):
+    key = request.url.path.strip("/")
+    if key:
+        redirect_path = await lookup_key(key)
+        if redirect_path:
+            from app.config import settings
+
+            redirect_url = f"{settings.base_url.rstrip('/')}{redirect_path}"
+            return RedirectResponse(url=redirect_url, status_code=302)
+    return await call_next(request)
 
 
 # Health check must be registered BEFORE the catch-all /{key} redirect route.
