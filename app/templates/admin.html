@@ -9,8 +9,14 @@
 <p class="meta">Editing redirect for key <code>{{ key }}</code>. Current path: <code>{{ existing_path }}</code></p>
 {% endif %}
 
-<form method="POST" action="/admin/{{ key }}">
+<form method="POST" action="{% if is_new %}/admin/{% else %}/admin/{{ key }}{% endif %}">
     <label for="path">Redirect Path</label>
+    {% if is_new %}
+    <div class="field">
+        <label for="key">Redirect Key</label>
+        <input type="text" id="key" name="key" placeholder="my-redirect-key" required>
+    </div>
+    {% endif %}
     <input type="text" id="path" name="path" value="{{ existing_path }}" required
            placeholder="/path/to/destination">
     <p class="meta">Path must start with <code>/</code> and will be appended to <code>{{ base_url }}</code>.</p>
