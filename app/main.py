@@ -18,7 +18,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(
+main_app = FastAPI()
+
+@main_app.context_processor
+async def inject_auth(request: Request):
+    authenticated = request.session.get("authenticated", False)
+    return {"is_authenticated": authenticated}
     title="Simple URL Redirector",
     version="0.1.0",
     lifespan=lifespan,
