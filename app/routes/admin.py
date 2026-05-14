@@ -16,6 +16,8 @@ from app.templates import templates
 from app.config import settings
 from pydantic import TypeAdapter
 
+RESERVED_KEYS = frozenset({"health", "login", "logout", "admin"})
+
 _path_adapter = TypeAdapter(PathValue)
 
 router = APIRouter()
@@ -102,6 +104,9 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
         except ValidationError as e:
             results["errors"].append(f"Row {i}: {e.errors()[0]['msg']}")
             continue
+        if key in RESERVED_KEYS:
+            results["errors"].append(f"Row {i}: key '{key}' is reserved and cannot be used")
+            continue
         entries.append((key, path))
 
     if entries:
@@ -141,6 +146,12 @@ async def admin_upsert(
     except ValidationError as e:
         clean = [{"loc": err.get("loc"), "msg": err.get("msg"), "type": err.get("type")} for err in e.errors()]
         raise HTTPException(status_code=422, detail=clean)
+    if key in RESERVED_KEYS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Key '{key}' is reserved and cannot be used as a redirect key. "
+                   f"Reserved keys: {', '.join(sorted(RESERVED_KEYS))}",
+        )
     await upsert_key(key, validated_path)
     return RedirectResponse(url=f"/{key}", status_code=302)
 
