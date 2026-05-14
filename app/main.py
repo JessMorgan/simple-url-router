@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from app.auth import hash_password
 from app.config import settings
@@ -23,6 +23,25 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def check_redirects(request: Request, call_next):
+    """Check if the URL path exists as a redirect key BEFORE route handlers run.
+
+    This prevents explicit routes like /health, /admin, /login, etc. from
+    shadowing user-created redirects with the same key.
+    """
+    if request.method == "GET":
+        key = request.url.path.strip("/")
+        if key:
+            from app.database import lookup_key
+
+            redirect_path = await lookup_key(key)
+            if redirect_path is not None:
+                redirect_url = f"{settings.base_url.rstrip('/')}{redirect_path}"
+                return RedirectResponse(url=redirect_url, status_code=302)
+    return await call_next(request)
 
 
 @app.exception_handler(HTTPException)
