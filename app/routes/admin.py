@@ -16,6 +16,9 @@ from app.templates import templates
 from app.config import settings
 from pydantic import TypeAdapter
 
+# Issue #3 fix: Define reserved keys to prevent conflicts with app routes
+RESERVED_KEYS = frozenset({"health", "admin", "login", "logout"})
+
 _path_adapter = TypeAdapter(PathValue)
 
 router = APIRouter()
@@ -94,7 +97,14 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
         if len(row) < 2 or not row[1].strip():
             results["errors"].append(f"Row {i}: missing path")
             continue
+        
         key = row[0].strip()
+        
+        # Issue #3 fix: Check reserved keys during bulk import
+        if key in RESERVED_KEYS:
+            results["errors"].append(f"Row {i}: Key '{key}' is reserved")
+            continue
+            
         path = row[1].strip()
         try:
             _ = TypeAdapter(KeyParam).validate_python(key)
@@ -136,6 +146,11 @@ async def admin_upsert(
     path: str = Form(...),
 ):
     require_admin(request)
+    
+    # Issue #3 fix: Check reserved keys during single upsert
+    if key in RESERVED_KEYS:
+        raise HTTPException(status_code=422, detail=f"Key '{key}' is reserved")
+        
     try:
         validated_path = _path_adapter.validate_python(path)
     except ValidationError as e:
