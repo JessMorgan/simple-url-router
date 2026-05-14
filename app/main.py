@@ -25,6 +25,18 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def check_redirect_middleware(request: Request, call_next):
+    from app.database import get_redirect
+    from fastapi.responses import RedirectResponse
+    key = request.url.path.strip("/")
+    if key and request.method == "GET":
+        redirect = await get_redirect(key)
+        if redirect:
+            return RedirectResponse(url=redirect["url"])
+    return await call_next(request)
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:
