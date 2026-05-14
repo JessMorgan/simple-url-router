@@ -43,7 +43,9 @@
     <nav>
         <a href="/">Home</a>
         <a href="/admin">Admin</a>
-        <a href="/logout">Logout</a>
+        {% if is_authenticated %}
+      <a href="/logout">Logout</a>
+      {% endif %}
     </nav>
     {% block content %}{% endblock %}
 </body>
