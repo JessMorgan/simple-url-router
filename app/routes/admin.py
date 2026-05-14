@@ -18,20 +18,19 @@ from pydantic import TypeAdapter
 
 _path_adapter = TypeAdapter(PathValue)
 
-router = APIRouter()
+RESERVED_KEYS = frozenset({"health", "admin", "login", "logout"})
 
+router = APIRouter()
 
 def require_admin(request: Request) -> None:
     token = request.cookies.get("session")
     if not token or not verify_session_token(token):
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     context = {"base_url": settings.base_url}
     return templates.TemplateResponse(request, "login.html", context)
-
 
 @router.post("/login")
 async def login(
@@ -57,13 +56,11 @@ async def login(
     )
     return response
 
-
 @router.get("/logout")
 async def logout(response: Response):
     response = RedirectResponse(url="/login", status_code=302)
     response.set_cookie(key="session", value="", max_age=0)
     return response
-
 
 @router.get("/admin/import", response_class=HTMLResponse)
 async def admin_import_page(request: Request):
@@ -74,7 +71,6 @@ async def admin_import_page(request: Request):
         "raw_csv": "",
     }
     return templates.TemplateResponse(request, "admin_import.html", context)
-
 
 @router.post("/admin/import")
 async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
@@ -102,6 +98,9 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
         except ValidationError as e:
             results["errors"].append(f"Row {i}: {e.errors()[0]['msg']}")
             continue
+        if key in RESERVED_KEYS:
+            results["errors"].append(f"Row {i}: Key '{key}' is reserved")
+            continue
         entries.append((key, path))
 
     if entries:
@@ -115,7 +114,6 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
     }
     return templates.TemplateResponse(request, "admin_import.html", context)
 
-
 @router.get("/admin/{key}", response_class=HTMLResponse)
 async def admin_edit_page(request: Request, key: KeyParam):
     require_admin(request)
@@ -128,7 +126,6 @@ async def admin_edit_page(request: Request, key: KeyParam):
     }
     return templates.TemplateResponse(request, "admin.html", context)
 
-
 @router.post("/admin/{key}")
 async def admin_upsert(
     request: Request,
@@ -136,6 +133,8 @@ async def admin_upsert(
     path: str = Form(...),
 ):
     require_admin(request)
+    if key in RESERVED_KEYS:
+        raise HTTPException(status_code=422, f"Key '{key}' is reserved")
     try:
         validated_path = _path_adapter.validate_python(path)
     except ValidationError as e:
@@ -144,7 +143,6 @@ async def admin_upsert(
     await upsert_key(key, validated_path)
     return RedirectResponse(url=f"/{key}", status_code=302)
 
-
 @router.post("/admin/{key}/delete")
 async def admin_delete(request: Request, key: KeyParam):
     require_admin(request)
@@ -152,7 +150,6 @@ async def admin_delete(request: Request, key: KeyParam):
     if not deleted:
         raise HTTPException(status_code=404, detail="Key not found")
     return RedirectResponse(url="/admin", status_code=302)
-
 
 @router.get("/admin", response_class=HTMLResponse)
 async def admin_list(request: Request):
