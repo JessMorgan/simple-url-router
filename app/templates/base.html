@@ -42,8 +42,10 @@
 <body>
     <nav>
         <a href="/">Home</a>
+        {% if authenticated %}
         <a href="/admin">Admin</a>
         <a href="/logout">Logout</a>
+        {% endif %}
     </nav>
     {% block content %}{% endblock %}
 </body>

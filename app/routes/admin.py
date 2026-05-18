@@ -29,7 +29,7 @@ def require_admin(request: Request) -> None:
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    context = {"base_url": settings.base_url}
+    context = {"base_url": settings.base_url, "authenticated": False}
     return templates.TemplateResponse(request, "login.html", context)
 
 
@@ -72,6 +72,7 @@ async def admin_import_page(request: Request):
         "base_url": settings.base_url,
         "result": None,
         "raw_csv": "",
+        "authenticated": True,
     }
     return templates.TemplateResponse(request, "admin_import.html", context)
 
@@ -112,6 +113,7 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
         "base_url": settings.base_url,
         "result": results,
         "raw_csv": csv_data,
+        "authenticated": True,
     }
     return templates.TemplateResponse(request, "admin_import.html", context)
 
@@ -125,6 +127,7 @@ async def admin_edit_page(request: Request, key: KeyParam):
         "existing_path": existing or "",
         "is_new": existing is None,
         "base_url": settings.base_url,
+        "authenticated": True,
     }
     return templates.TemplateResponse(request, "admin.html", context)
 
@@ -161,5 +164,6 @@ async def admin_list(request: Request):
     context = {
         "redirects": redirects,
         "base_url": settings.base_url,
+        "authenticated": True,
     }
     return templates.TemplateResponse(request, "admin_list.html", context)
