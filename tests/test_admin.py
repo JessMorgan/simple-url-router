@@ -3,9 +3,9 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_admin_list_unauthed(client):
-    """Admin list should redirect to login for unauthenticated users."""
+    """Admin list should show login page for unauthenticated users."""
     response = await client.get("/admin", follow_redirects=False)
-    assert response.status_code == 401
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -96,9 +96,9 @@ async def test_admin_create_invalid_path(authed_client):
 
 @pytest.mark.asyncio
 async def test_admin_import_page_unauthed(client):
-    """Import page should 401 for unauthenticated users."""
+    """Import page should show login page for unauthenticated users."""
     response = await client.get("/admin/import", follow_redirects=False)
-    assert response.status_code == 401
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio

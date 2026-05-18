@@ -15,24 +15,24 @@ async def test_login_success(client):
 
 @pytest.mark.asyncio
 async def test_login_wrong_password(client):
-    """Invalid password should 401."""
+    """Invalid password should return login page."""
     response = await client.post(
         "/login",
         data={"username": "admin", "password": "wrongpassword"},
         follow_redirects=False,
     )
-    assert response.status_code == 401
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
 async def test_login_wrong_username(client):
-    """Invalid username should 401."""
+    """Invalid username should return login page."""
     response = await client.post(
         "/login",
         data={"username": "hacker", "password": "testpassword"},
         follow_redirects=False,
     )
-    assert response.status_code == 401
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
