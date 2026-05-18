@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from app.auth import hash_password
+from app.auth import hash_password, verify_session_token
 from app.config import settings
 from app.database import init_db, list_all
 from app.routes import admin, redirect
@@ -28,7 +28,7 @@ app = FastAPI(
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:
-        context = {"base_url": settings.base_url}
+        context = {"base_url": settings.base_url, "authenticated": False}
         return templates.TemplateResponse(
             request, "login.html", context, status_code=401
         )
@@ -46,10 +46,13 @@ async def health():
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
+    token = request.cookies.get("session")
+    authenticated = verify_session_token(token) if token else False
     redirects = await list_all()
     context = {
         "redirects": redirects,
         "base_url": settings.base_url,
+        "authenticated": authenticated,
     }
     return templates.TemplateResponse(request, "admin_list.html", context)
 
@@ -64,6 +67,7 @@ async def admin_new_page(request: Request):
         "existing_path": "",
         "is_new": True,
         "base_url": settings.base_url,
+        "authenticated": True,
     }
     return templates.TemplateResponse(request, "admin.html", context)
 
