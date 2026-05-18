@@ -9,6 +9,13 @@
 <p class="meta">Editing redirect for key <code>{{ key }}</code>. Current path: <code>{{ existing_path }}</code></p>
 {% endif %}
 
+{% if is_reserved %}
+<div class="flash error" role="alert">
+    <strong>Reserved key:</strong> <code>{{ key }}</code> is shadowed by an application route.
+    Redirects for this key will never be served.
+</div>
+{% endif %}
+
 <form method="POST" action="/admin/{{ key }}">
     <label for="path">Redirect Path</label>
     <input type="text" id="path" name="path" value="{{ existing_path }}" required
