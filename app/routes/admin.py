@@ -18,6 +18,18 @@ from pydantic import TypeAdapter
 
 _path_adapter = TypeAdapter(PathValue)
 
+_RESERVED_KEYS = {"health", "login", "logout", "admin"}
+
+
+def _is_reserved_key(key: str) -> bool:
+    """Check if a key is reserved and shadowed by application routes."""
+    if key in _RESERVED_KEYS:
+        return True
+    if key.startswith("admin/"):
+        return True
+    return False
+
+
 router = APIRouter()
 
 
@@ -98,6 +110,15 @@ async def admin_import_csv(request: Request, csv_data: str = Form(alias="csv")):
         path = row[1].strip()
         try:
             _ = TypeAdapter(KeyParam).validate_python(key)
+        except ValidationError as e:
+            results["errors"].append(f"Row {i}: {e.errors()[0]['msg']}")
+            continue
+        if _is_reserved_key(key):
+            results["errors"].append(
+                f"Row {i}: key '{key}' is reserved and cannot be used as a redirect"
+            )
+            continue
+        try:
             _ = TypeAdapter(PathValue).validate_python(path)
         except ValidationError as e:
             results["errors"].append(f"Row {i}: {e.errors()[0]['msg']}")
@@ -125,6 +146,7 @@ async def admin_edit_page(request: Request, key: KeyParam):
         "existing_path": existing or "",
         "is_new": existing is None,
         "base_url": settings.base_url,
+        "is_reserved": _is_reserved_key(key),
     }
     return templates.TemplateResponse(request, "admin.html", context)
 
@@ -136,6 +158,11 @@ async def admin_upsert(
     path: str = Form(...),
 ):
     require_admin(request)
+    if _is_reserved_key(key):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Key '{key}' is reserved and cannot be used as a redirect.",
+        )
     try:
         validated_path = _path_adapter.validate_python(path)
     except ValidationError as e:
