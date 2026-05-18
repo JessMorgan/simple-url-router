@@ -9,7 +9,15 @@
 <p class="meta">Editing redirect for key <code>{{ key }}</code>. Current path: <code>{{ existing_path }}</code></p>
 {% endif %}
 
-<form method="POST" action="/admin/{{ key }}">
+<form method="POST" action="{% if is_new and not key %}/admin/new{% else %}/admin/{{ key }}{% endif %}">
+    {% if is_new and not key %}
+    <label for="key">Key</label>
+    <input type="text" id="key" name="key" required
+           placeholder="my-redirect-key"
+           pattern="^[a-zA-Z0-9_\\-./@+=:]+$"
+           title="Letters, digits, and _-./@+=:">
+    <p class="meta">Short name that users will type after the slash (e.g. <code>/my-redirect-key</code>).</p>
+    {% endif %}
     <label for="path">Redirect Path</label>
     <input type="text" id="path" name="path" value="{{ existing_path }}" required
            placeholder="/path/to/destination">
