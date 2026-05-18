@@ -53,7 +53,7 @@ async def login(
         max_age=settings.session_max_age,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.cookie_secure,
     )
     return response
 

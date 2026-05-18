@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     session_max_age: int = 86400
     """Session cookie lifetime in seconds (default 24 hours)."""
 
+    cookie_secure: bool = False
+    """Set the Secure flag on session cookies. Enable when behind HTTPS."""
+
     @property
     def db_url(self) -> str:
         """SQLite connection URL for aiosqlite."""
