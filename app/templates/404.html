@@ -7,7 +7,14 @@
 {% if authenticated %}
 <div class="flash">
     <p>You are logged in as an administrator. Would you like to create a redirect for this key?</p>
-    <a class="btn btn-primary" href="/admin/{{ key }}">Create Redirect for <code>{{ key }}</code></a>
+    <form method="POST" action="/admin/{{ key }}" style="margin-top: 1rem;">
+        <label for="path-{{ key }}">Enter the target path for this key:</label>
+        <input type="text" id="path-{{ key }}" name="path" placeholder="/new-path" required>
+        <button type="submit" class="btn btn-primary">Create Redirect</button>
+    </form>
+    <p style="margin-top: 1rem;">
+        <a href="/admin/{{ key }}">Or edit via admin panel</a>
+    </p>
 </div>
 {% else %}
 <p class="meta">
